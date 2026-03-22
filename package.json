@@ -1,0 +1,31 @@
+{
+  "name": "opencode-yolo",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "bun build src/plugin/index.ts --outfile dist/index.js --target bun --external @opencode-ai/plugin",
+    "plugin:install": "bun build src/plugin/index.ts --outfile ~/.config/opencode/plugins/yolo.js --target bun --external @opencode-ai/plugin",
+    "test": "bun test",
+    "test:watch": "bun test --watch",
+    "test:integration": "bun test src/e2e",
+    "typecheck": "tsc --noEmit",
+    "lint": "biome lint .",
+    "lint:fix": "biome lint --write .",
+    "format": "biome format --write .",
+    "format:check": "biome format .",
+    "check": "biome check .",
+    "check:fix": "biome check --write ."
+  },
+  "dependencies": {
+    "@opencode-ai/plugin": "^1.2.27",
+    "@opencode-ai/sdk": "^1.2.27"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.4.7",
+    "@playwright/test": "^1.58.2",
+    "@types/bun": "^1.3.11",
+    "@types/node": "^24.3.0",
+    "typescript": "^5.9.2"
+  }
+}
