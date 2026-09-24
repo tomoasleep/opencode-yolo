@@ -67,7 +67,7 @@ bun test src/e2e/yolo-mode.test.ts
 OpenCode YOLO Mode Plugin - Automatically approves all permissions when `OPENCODE_YOLO_ENABLE=true` environment variable is set.
 
 - Main entry: `src/plugin/index.ts`
-- Plugin architecture using `@opencode-ai/plugin` SDK
+- V2 plugin architecture using `@opencode/plugin` SDK
 - E2E tests use mock OpenAI server and spawn actual opencode processes
 
 ## Code Style Guidelines
@@ -156,6 +156,6 @@ src/
 
 ### Plugin Development
 
-- Plugins export an async function receiving context
-- Return an object with hook handlers (`config`, `event`, etc.)
-- Use SDK types from `@opencode-ai/sdk/v2` for v2 API features
+- Plugins default-export a definition created with `Plugin.define`, including a stable ID and `setup(ctx)`.
+- Register hooks, transforms, and event subscriptions through the V2 context APIs.
+- Use `@opencode/client` for V2 HTTP client operations.

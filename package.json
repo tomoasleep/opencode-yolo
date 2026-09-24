@@ -4,8 +4,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "bun build src/plugin/index.ts --outfile dist/index.js --target bun --external @opencode-ai/plugin",
-    "plugin:install": "bun build src/plugin/index.ts --outfile ~/.config/opencode/plugins/yolo.js --target bun --external @opencode-ai/plugin",
+    "build": "bun build src/plugin/index.ts --outfile dist/index.js --target bun --external @opencode/plugin",
+    "plugin:install": "bun build src/plugin/index.ts --outfile ~/.config/opencode/plugins/yolo.js --target bun --external @opencode/plugin",
     "test": "bun test",
     "test:watch": "bun test --watch",
     "test:integration": "bun test src/e2e",
@@ -18,8 +18,8 @@
     "check:fix": "biome check --write ."
   },
   "dependencies": {
-    "@opencode-ai/plugin": "^1.2.27",
-    "@opencode-ai/sdk": "^1.2.27"
+    "@opencode/plugin": "2.0.14",
+    "@opencode/client": "2.0.14"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.4.7",

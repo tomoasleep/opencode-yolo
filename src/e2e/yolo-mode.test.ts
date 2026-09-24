@@ -13,20 +13,17 @@ describe("YOLO Mode", () => {
     const opencodeProcess = await startOpencodeProcess({
       yoloPort: 4321,
       mockServerUrl: mockServer.url,
-      permission: {
-        bash: "ask",
-      },
-      prompt: "Run a test bash command",
+      permissions: [{ action: "shell", resource: "*", effect: "ask" }],
+      prompt: "Run a test shell command",
     });
 
     try {
       await opencodeProcess.waitForLog(/\[yolo:e2e\] plugin loaded/);
-      await opencodeProcess.waitForLog(/\[yolo:e2e\] serverUrl/);
 
       await waitUntil(async () => {
         const messages = await opencodeProcess.readMessages();
         return (
-          messages.includes('"status":"completed"') &&
+          messages.includes('"outcome":"succeeded"') &&
           messages.includes("YOLO mode verification completed successfully")
         );
       });
@@ -36,33 +33,6 @@ describe("YOLO Mode", () => {
 
       const agentRequest = mockServer.agentRequests[1];
       expect(agentRequest.body).toContain("YOLO Mode is ENABLED");
-    } finally {
-      opencodeProcess.stop();
-      await opencodeProcess.cleanup();
-      await mockServer.stop();
-    }
-  }, 45000);
-
-  test("config hook sets question permission to deny", async () => {
-    const mockServer = await startMockOpenAIServer({
-      models: createYoloFlowModels(),
-    });
-
-    const opencodeProcess = await startOpencodeProcess({
-      yoloPort: 4322,
-      mockServerUrl: mockServer.url,
-      prompt: "Test that question permission is denied",
-    });
-
-    try {
-      await opencodeProcess.waitForLog(/\[yolo:e2e\] plugin loaded/);
-
-      await waitUntil(async () => {
-        const messages = await opencodeProcess.readMessages();
-        return messages.includes('"status":"completed"');
-      });
-
-      expect(opencodeProcess.stdout).toContain("[yolo:e2e] plugin loaded");
     } finally {
       opencodeProcess.stop();
       await opencodeProcess.cleanup();

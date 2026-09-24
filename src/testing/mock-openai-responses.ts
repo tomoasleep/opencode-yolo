@@ -12,7 +12,7 @@ export function createYoloFlowModels(): MockServerOptions["models"] {
       if (agentRequests.length === 1) {
         return createToolCallResponse("agent-model", [
           {
-            name: "bash",
+            name: "shell",
             arguments: {
               command: "echo 'YOLO test passed'",
               description: "Test bash command execution",

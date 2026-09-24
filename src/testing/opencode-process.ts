@@ -5,13 +5,13 @@ import { createServer } from "node:net";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 
-import { createOpencodeClient } from "@opencode-ai/sdk/v2";
+import { OpenCode } from "@opencode/client";
 
 export type OpencodeProcessOptions = {
   yoloPort: number;
   mockServerUrl: string;
   opencodePort?: number;
-  permission?: Record<string, string>;
+  permissions?: { action: string; resource: string; effect: string }[];
   prompt: string;
 };
 
@@ -56,14 +56,15 @@ export async function startOpencodeProcess(
 
   const config: Record<string, unknown> = {
     model: "mock/agent-model",
-    small_model: "mock/title-model",
-    enabled_providers: ["mock"],
     share: "disabled",
-    provider: {
+    agents: {
+      title: { model: "mock/title-model" },
+    },
+    providers: {
       mock: {
-        npm: "@ai-sdk/openai-compatible",
+        package: "aisdk:@ai-sdk/openai-compatible",
         name: "Mock",
-        options: {
+        settings: {
           baseURL: `${options.mockServerUrl}/v1`,
           apiKey: "test-key",
         },
@@ -85,7 +86,7 @@ export async function startOpencodeProcess(
         },
       },
     },
-    ...(options.permission ? { permission: options.permission } : {}),
+    ...(options.permissions ? { permissions: options.permissions } : {}),
   };
 
   const childProcess = spawn(
@@ -128,27 +129,23 @@ export async function startOpencodeProcess(
       });
     });
 
-  await waitForLog(logsDir, /opencode server listening on /, 15000);
+  await waitForLog(logsDir, /server listening on /, 15000);
+  const serverOutput = `${await readLog(join(logsDir, "stdout.log"))}\n${await readLog(join(logsDir, "stderr.log"))}`;
+  const serverPassword = serverOutput.match(/server password (\S+)/)?.[1];
+  if (!serverPassword) throw new Error("OpenCode server did not report its password");
 
-  const client = createOpencodeClient({
+  const client = OpenCode.make({
     baseUrl: `http://127.0.0.1:${opencodePort}`,
+    headers: {
+      Authorization: `Basic ${Buffer.from(`opencode:${serverPassword}`).toString("base64")}`,
+    },
   });
 
-  const sessionResponse = await client.session.create(
-    {
-      directory: workspaceDir,
-    },
-    { responseStyle: "data", throwOnError: true },
-  );
-  const session = "data" in sessionResponse ? sessionResponse.data : sessionResponse;
+  const session = await client.session.create({
+    location: { directory: workspaceDir },
+  });
 
-  await client.session.promptAsync(
-    {
-      sessionID: session.id,
-      parts: [{ type: "text", text: options.prompt }],
-    },
-    { responseStyle: "data", throwOnError: true },
-  );
+  await client.session.prompt({ sessionID: session.id, text: options.prompt });
 
   return {
     pid: childProcess.pid,
@@ -166,10 +163,7 @@ export async function startOpencodeProcess(
     waitForExit,
     waitForLog: (pattern, timeoutMs = 15000) => waitForLog(logsDir, pattern, timeoutMs),
     readMessages: async () => {
-      const messages = await client.session.messages(
-        { sessionID: session.id, directory: workspaceDir },
-        { responseStyle: "data", throwOnError: true },
-      );
+      const messages = await client.message.list({ sessionID: session.id });
       return JSON.stringify(messages);
     },
     cleanup: async () => {
@@ -189,10 +183,12 @@ async function writePluginFixture(configDir: string): Promise<void> {
 
   const contents = `import YoloPlugin from ${JSON.stringify(distPath)};
 
-export default async (context) => {
-  console.log(\`[yolo:e2e] serverUrl \${context.serverUrl}\`)
-  console.log("[yolo:e2e] plugin loaded")
-  return await YoloPlugin(context)
+export default {
+  ...YoloPlugin,
+  async setup(context) {
+    console.log("[yolo:e2e] plugin loaded")
+    return await YoloPlugin.setup(context)
+  },
 }
 `;
 
